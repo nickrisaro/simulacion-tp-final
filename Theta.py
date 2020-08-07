@@ -27,7 +27,7 @@ def main():
 
     resultadosUnicos, frecuencias = np.unique(theta, return_counts=True)
     frecuencias = frecuencias/len(theta)
-    # dias_probabilidad = dict(zip(resultadosUnicos, frecuencias))
+
     plt.bar(resultadosUnicos, frecuencias)
     plt.title("Probabilidad de morir a los n días de ser infectado")
     plt.savefig("{0}/salida/theta.png".format(sys.path[0]))

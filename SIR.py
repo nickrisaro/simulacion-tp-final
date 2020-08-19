@@ -69,11 +69,11 @@ def simularSIR(poblacion, beta, gammar, infectados_iniciales, dias, maximo_tiemp
     R = 0
     Nu = I
 
-    Nus = np.full(dias, 0)
-    Ss = np.full(dias, 0)
-    Is = np.full(dias, 0)
-    Rs = np.full(dias, 0)
-    Ds = np.full(dias + maximo_tiempo_muerte, 0)
+    Nus = np.full(dias, 0.0)
+    Ss = np.full(dias, 0.0)
+    Is = np.full(dias, 0.0)
+    Rs = np.full(dias, 0.0)
+    Ds = np.full(dias + maximo_tiempo_muerte, 0.0)
 
     Nus[0] = Nu
     Ss[0] = S
@@ -88,34 +88,16 @@ def simularSIR(poblacion, beta, gammar, infectados_iniciales, dias, maximo_tiemp
         tiempo_muerte = np.random.choice(list(probabilidades_tiempo_muerte.keys()), size=muertes_futuras, replace=True, p=list(probabilidades_tiempo_muerte.values()))
 
         for dia in tiempo_muerte:
-            Ds[t + dia] = Ds[t + dia] + 1
-
-        print(Ds)
+            if t + dia < Ds.size:
+                Ds[t + dia] = Ds[t + dia] + 1
 
         Rs[t] = Rs[t-1] + (gammar*(Is[t-1] - Ds[t -1])) + Ds[t-1]
         Ss[t] = Ss[t-1] - nu
-        Is[t] = Is[t-1] + nu - (gammar * (Is[t - 1] - Ds[t - 1])) - Ds[t - 1]
+        Is[t] = Is[t-1] + nu - gammar * (Is[t - 1] - Ds[t - 1]) - Ds[t - 1]
         Nus[t] = nu
 
-    print(Ds)
-    # graficarSIR(Ss, Is, Rs)
-    # graficarD(Ds, maximo_tiempo_muerte)
-#   save.death.times <- NULL
-  
-#   for(t in 2:T){
-
-#     death.times <- sample(0:max.time, future.deaths, prob=theta, replace=TRUE)
-    
-#     save.death.times <- c(death.times, save.death.times)
-#     death.time.counts <- table(c(death.times, 0:max.time)) - 1
-#     Ds[t:(t+max.time)] <- Ds[t:(t + max.time)] + death.time.counts
-    
-#     Rs[t] <- Rs[t - 1] + gammar * (Is[t - 1] - Ds[t - 1])  + Ds[t - 1]
-#     Ss[t] <- Ss[t - 1] - nu
-#     Is[t] <- Is[t - 1] + nu - gammar * (Is[t - 1] - Ds[t - 1]) - Ds[t - 1]
-#     Nus[t] <- nu
-#   }
-
+    graficarSIR(Ss, Is, Rs)
+    graficarD(Ds, maximo_tiempo_muerte)
 
 def main():
     incubacion = np.random.poisson(np.random.gamma(size=100000, shape=5.5, scale=1/1.1))
@@ -139,7 +121,7 @@ def main():
     theta = theta[(theta <= cuantil)]
 
     # Obtenemos el máximo de días hasta la muerte (dentro del cuantil 99%)
-    maximo_tiempo_muerte = np.max(theta)
+    maximo_tiempo_muerte = np.max(theta) - 1
 
     resultadosUnicos, frecuencias = np.unique(theta, return_counts=True)
     # Escalamos a 1 los resultados
@@ -147,7 +129,7 @@ def main():
 
     tabla_probabilidades_dias_muerte = dict(zip(resultadosUnicos, frecuencias))
 
-    simularSIR(1000000, 0.2, 0.05, 10, DIAS, maximo_tiempo_muerte, tabla_probabilidades_dias_muerte, 0.01)
+    simularSIR(1000000, 0.2, 0.1, 10, DIAS, maximo_tiempo_muerte, tabla_probabilidades_dias_muerte, 0.01)
 
 
 

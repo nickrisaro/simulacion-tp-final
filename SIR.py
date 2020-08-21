@@ -33,14 +33,13 @@ def graficarSIR(S, I, R):
     if MOSTRAR_GRAFICO:
         plt.show()
 
-def graficarD(D, maximo_tiempo_muerte):
+def graficarD(D):
     """
     Realiza un gráfico con la evolución de la variable D respecto del tiempo
     """
-    TIEMPO_D = np.linspace(0, DIAS + maximo_tiempo_muerte, DIAS + maximo_tiempo_muerte)
     fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
-    ax.plot(TIEMPO_D, D, 'b', alpha=0.5, lw=2, label='D')
+    ax.plot(TIEMPO, D[0:DIAS], 'b', alpha=0.5, lw=2, label='D')
 
     ax.set_xlabel('Tiempo / días')
     ax.set_ylabel('Población')
@@ -121,7 +120,7 @@ def simularSIR(poblacion, beta, gammar, infectados_iniciales, dias, maximo_tiemp
         Nus[t] = nu
 
     graficarSIR(Ss, Is, Rs)
-    graficarD(Ds, maximo_tiempo_muerte)
+    graficarD(Ds)
     graficarNu(Nus)
 
 def main():

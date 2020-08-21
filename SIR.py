@@ -12,13 +12,14 @@ def graficarSIR(S, I, R):
     """
     fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
-    ax.plot(TIEMPO, S/1000000, 'b', alpha=0.5, lw=2, label='Susceptibles')
-    ax.plot(TIEMPO, I/1000000, 'r', alpha=0.5, lw=2, label='Infectados')
-    ax.plot(TIEMPO, R/1000000, 'g', alpha=0.5, lw=2, label='Recuperados')
+    ax.plot(TIEMPO, S, 'b', alpha=0.5, lw=2, label='Susceptibles')
+    ax.plot(TIEMPO, I, 'r', alpha=0.5, lw=2, label='Infectados')
+    ax.plot(TIEMPO, R, 'g', alpha=0.5, lw=2, label='Recuperados')
 
     ax.set_xlabel('Tiempo / días')
     ax.set_ylabel('Población')
-    # ax.set_ylim(0,1000000)
+    ax.set_ylim(0,1100000)
+    ax.yaxis.get_major_formatter().set_scientific(False)
     ax.yaxis.set_tick_params(length=0)
     ax.xaxis.set_tick_params(length=0)
     ax.grid(b=True, which='major', c='w', lw=2, ls='-')
@@ -40,7 +41,30 @@ def graficarD(D, maximo_tiempo_muerte):
     fig = plt.figure(facecolor='w')
     ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
     ax.plot(TIEMPO_D, D, 'b', alpha=0.5, lw=2, label='D')
-    
+
+    ax.set_xlabel('Tiempo / días')
+    ax.set_ylabel('Población')
+    ax.yaxis.set_tick_params(length=0)
+    ax.xaxis.set_tick_params(length=0)
+    ax.grid(b=True, which='major', c='w', lw=2, ls='-')
+    legend = ax.legend()
+    legend.get_frame().set_alpha(0.5)
+    for spine in ('top', 'right', 'bottom', 'left'):
+        ax.spines[spine].set_visible(False)
+
+    plt.savefig("{0}/salida/D.png".format(sys.path[0]))
+    print("El gráfico se guardó en {0}/salida/D.png".format(sys.path[0]))
+    if MOSTRAR_GRAFICO:
+        plt.show()
+
+def graficarNu(Nu):
+    """
+    Realiza un gráfico con la evolución de la variable Nu respecto del tiempo
+    """
+    fig = plt.figure(facecolor='w')
+    ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
+    ax.plot(TIEMPO, Nu, 'b', alpha=0.5, lw=2, label='Nu')
+
     ax.set_xlabel('Tiempo / días')
     ax.set_ylabel('Población')
     # ax.set_ylim(0,1000000)
@@ -52,8 +76,8 @@ def graficarD(D, maximo_tiempo_muerte):
     for spine in ('top', 'right', 'bottom', 'left'):
         ax.spines[spine].set_visible(False)
 
-    plt.savefig("{0}/salida/D.png".format(sys.path[0]))
-    print("El gráfico se guardó en {0}/salida/D.png".format(sys.path[0]))
+    plt.savefig("{0}/salida/Nu.png".format(sys.path[0]))
+    print("El gráfico se guardó en {0}/salida/Nu.png".format(sys.path[0]))
     if MOSTRAR_GRAFICO:
         plt.show()
 
@@ -98,6 +122,7 @@ def simularSIR(poblacion, beta, gammar, infectados_iniciales, dias, maximo_tiemp
 
     graficarSIR(Ss, Is, Rs)
     graficarD(Ds, maximo_tiempo_muerte)
+    graficarNu(Nus)
 
 def main():
     incubacion = np.random.poisson(np.random.gamma(size=100000, shape=5.5, scale=1/1.1))

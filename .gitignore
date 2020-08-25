@@ -1,6 +1,9 @@
 # Gráficos generados
 salida/
 
+# Archivos para pruebas
+pruebas
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -21,35 +21,28 @@ PORCENTAJE_POBLACION_EN_CUARENTENA = 0.35
 MOSTRAR_GRAFICO = False
 TIEMPO = np.arange(T0, T1, 1)
 TIEMPO_GRAFICO = np.linspace(0, DIAS, DIAS)
-CAMAS = np.full(DIAS, PORCENTAJE_CAMAS_POBLACION)
 
-def SIR(t, y):
+def SIR_pre_cuarentena(t, y, beta, gamma):
     """
     Esta función será invocada por el método de resolución de ecuaciones diferenciales
     Para cada instante de tiempo t calcula los nuevos valores de S, I y R
+    Este modelo asume que no hay cuarentena
     """
     S, I, R = y
-    # if t <= T1:
-    dsdt = -BETA*S*I
-    didt = BETA*S*I - GAMMA*I
-    drdt = GAMMA*I
-    # if t > T1:
-    #     dsdt = -BETA*PHI*S*I
-    #     didt = BETA*PHI*S*I - GAMMA*I
-    #     drdt = GAMMA*I
+
+    dsdt = -beta*S*I
+    didt = beta*S*I - gamma*I
+    drdt = gamma*I
     return dsdt, didt, drdt
 
-def SIR2(t, y):
+def SIR_post_cuarentena(t, y):
     """
     Esta función será invocada por el método de resolución de ecuaciones diferenciales
     Para cada instante de tiempo t calcula los nuevos valores de S, I y R
+    Este modelo asume que comenzó una cuarentena y que la efectividad de esta es PHI
     """
     S, I, R = y
-    # if t <= T1:
-    # dsdt = -BETA*S*I
-    # didt = BETA*S*I - GAMMA*I
-    # drdt = GAMMA*I
-    # if t > T1:
+
     dsdt = -BETA*PHI*S*I
     didt = BETA*PHI*S*I - GAMMA*I
     drdt = GAMMA*I
@@ -64,20 +57,14 @@ def simular_con_cuarentena():
     S0 = 1
     I0 = 1/N
     R0 = 1.953490*10**-17
+
     y0 = [S0, I0, R0]
 
-    # print(y0)
-    # print(BETA)
-    # print(GAMMA)
-    # print(N)
-    # TODO Probar con dos llamadas a SIR, una con beta y gamma y la otra con beta*phi y gamma
     TIEMPO = np.arange(T0, T1, 1)
 
-    ret = solve_ivp(SIR, [T0, T1], y0, t_eval=TIEMPO, method='LSODA')
+    ret = solve_ivp(SIR_pre_cuarentena, [T0, T1], y0, t_eval=TIEMPO, method='LSODA', args=(BETA*PHI, GAMMA))
     S, I, R = ret.y
-    # print(S)
-    # print(I)
-    # print(R)
+
     S = np.insert(S, 0, np.repeat(S0, T0+1), axis=0)
     I = np.insert(I, 0, np.repeat(I0, T0+1), axis=0)
     R = np.insert(R, 0, np.repeat(R0, T0+1), axis=0)
@@ -92,7 +79,7 @@ def simular_con_cuarentena():
 
     TIEMPO = np.arange(T1, DIAS+1, 1)
 
-    ret = solve_ivp(SIR2, [T1, DIAS+1], y0, t_eval=TIEMPO, method='LSODA')
+    ret = solve_ivp(SIR_pre_cuarentena, [T1, DIAS+1], y0, t_eval=TIEMPO, method='LSODA', args=(BETA, GAMMA))
     S1, I1, R1 = ret.y
 
     Nus1 = S1 * N
@@ -106,35 +93,6 @@ def simular_con_cuarentena():
     print(Nus)
     return [S, I, R, Nus]
 
-def imprimir_informacion(SIR, modelo):
-    """
-    Calcula e imprime por consola algunos valores relevantes de la simulación
-    """
-    S, I, R, Nus = SIR
-    dia_pico_infectados = 0
-    maximo_infectados = 0
-    dia_fin_enfermedad = 0
-    dia_saturacion = 0
-    for dia in range (0, len(S)):
-        if I[dia] >= maximo_infectados:
-            maximo_infectados = I[dia]
-            dia_pico_infectados = dia
-
-        if I[dia] < PORCENTAJE_FIN_EPIDEMIA and dia_fin_enfermedad is 0:
-            dia_fin_enfermedad = dia
-
-        if I[dia] >= PORCENTAJE_CAMAS_POBLACION and dia_saturacion is 0:
-            dia_saturacion = dia
-
-    print("Información del modelo " + modelo)
-    print("El pico de la enfermedad fue el día {0} con el {1:.2f}% de la población infectada".format(dia_pico_infectados, maximo_infectados*100))
-    print("La epidemia duró {0} días".format(dia_fin_enfermedad))
-    if dia_saturacion is not 0:
-        print("El sistema de salud se saturó el día", dia_saturacion)
-    else:
-        print("El sistema de salud no se saturó")
-
-    return SIR
 
 def graficar(SIR, modelo):
     """
@@ -146,7 +104,7 @@ def graficar(SIR, modelo):
     ax.plot(TIEMPO_GRAFICO, S*100, 'b', alpha=0.5, lw=2, label='Susceptibles')
     ax.plot(TIEMPO_GRAFICO, I*100, 'r', alpha=0.5, lw=2, label='Infectados')
     ax.plot(TIEMPO_GRAFICO, R*100, 'g', alpha=0.5, lw=2, label='Recuperados')
-    # ax.plot(TIEMPO_GRAFICO, CAMAS*100, 'black', alpha=0.5, lw=2, label='Capacidad del sistema sanitario')
+
     ax.set_xlabel('Tiempo / días')
     ax.set_ylabel('% población')
     ax.set_ylim(0,100)
@@ -167,7 +125,7 @@ def main():
 
     print("TP final - grafico SIR con cuarentena")
 
-    graficar(imprimir_informacion(simular_con_cuarentena(), "Con cuarentena"), "Con cuarentena")
+    graficar(simular_con_cuarentena(), "Con cuarentena")
 
 
 if __name__ == "__main__":

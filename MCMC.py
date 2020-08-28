@@ -2,12 +2,15 @@ from datetime import date
 from datetime import datetime
 from scipy.integrate import solve_ivp
 from scipy.stats import truncnorm
+from Theta import calcular_theta
 
 import csv
 import matplotlib.pyplot as plt
 import numpy as np
+import statsmodels.api as sm
 import sys
-from Theta import calcular_theta
+
+p = 0.015
 
 ITERACIONES = 50000
 PERIODO_ADAPTACION = ITERACIONES/5
@@ -115,7 +118,17 @@ def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, efectividad_cuarentena
     estados_SIR_propuestos = np.empty(ITERACIONES, dtype=np.ndarray)
 
     estado_inicial = simular_con_cuarentena(beta, gammar, efectividad_cuarentena, dias_epidemia, T0_INICIAL)
-    print(estado_inicial)
+    mus = medias_muertes_diarias(theta, estado_inicial[3], dias_epidemia)
+
+def medias_muertes_diarias(theta, nus, dias_epidemia):
+    # FIXME mi cálculo de theta no incluye las probabilidades para 0, 1 y 2
+    # en el paper le asignan la misma probabilidad que a 3
+    prob = np.append([0.0000100911228392383,0.0000100911228392383,0.0000100911228392383], list(theta.values())[0:len(theta.values()) -1])
+    nus = np.append(np.zeros(prob.size + 1), nus)
+    nus = nus * p
+    y = sm.tsa.filters.convolution_filter(nus, prob, nsides=1)
+    return y[-dias_epidemia:]
+
 
 def log_normal_truncada_desplazada(x, limite_inferior, limite_superior, media, desvio):
     """

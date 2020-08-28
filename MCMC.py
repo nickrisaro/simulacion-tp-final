@@ -6,6 +6,7 @@ import csv
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
+from Theta import calcular_theta
 
 ITERACIONES = 50000
 PERIODO_ADAPTACION = ITERACIONES/5
@@ -143,9 +144,12 @@ def cargar_muertes_reales_por_dia_del_estado(nombre_estado):
 
 def main():
 
+    theta = calcular_theta()
+
     muertes_reales_por_dia = cargar_muertes_reales_por_dia_del_estado("California")
     dias_epidemia = muertes_reales_por_dia.size
-    ejecutar_mcmc(None, BETA_INICIAL, GAMMA_INICIAL, dias_epidemia, muertes_reales_por_dia, None, None, None, None, PHI_INICIAL)
+
+    ejecutar_mcmc(theta, BETA_INICIAL, GAMMA_INICIAL, dias_epidemia, muertes_reales_por_dia, None, None, None, None, PHI_INICIAL)
     pass
 
 if __name__ == "__main__":

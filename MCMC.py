@@ -15,11 +15,11 @@ FACTOR_ESCALA = (2.38 / 4) * 0.5
 LIMITES_T0 = [1, 60] # TODO Ver si arranco en 0
 LIMITES_EFECTIVIDAD_CUARENTENA = [0.01, 0.99]
 
-T0 = 30 # Inicio epidemia
+T0_INICIAL = 30 # Inicio epidemia
 T1 = 73 # Inicio cuarentena
 POBLACION = 39937489
 
-R0_INICIAL = 2/3
+R0_INICIAL = 2.3
 GAMMA_INICIAL = 1/6
 BETA_INICIAL = GAMMA_INICIAL * R0_INICIAL
 PHI_INICIAL = 0.4
@@ -91,7 +91,15 @@ def simular_con_cuarentena(BETA, GAMMA, PHI, DIAS, T0):
 
     return [S, I, R, Nus]
 
-def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, xi, zeta, primer_contagio, inicio_cuarentena, efectividad_cuarentena):
+def proponer_parametros_adaptacion(beta, gamma, T0, phi):
+    """
+    Propone nuevos valores para los parámetros de la simulación
+    Considera que el algoritmo está en la fase de adaptación
+    """
+    return np.random.normal(loc=(beta, gamma, T0, phi), scale=np.sqrt(VARIANZA_INICIAL), size=4)
+
+
+def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, efectividad_cuarentena):
 
     aceptados = 0
     rechazados = 0
@@ -149,8 +157,7 @@ def main():
     muertes_reales_por_dia = cargar_muertes_reales_por_dia_del_estado("California")
     dias_epidemia = muertes_reales_por_dia.size
 
-    ejecutar_mcmc(theta, BETA_INICIAL, GAMMA_INICIAL, dias_epidemia, muertes_reales_por_dia, None, None, None, None, PHI_INICIAL)
-    pass
+    ejecutar_mcmc(theta, BETA_INICIAL, GAMMA_INICIAL, dias_epidemia, muertes_reales_por_dia, PHI_INICIAL)
 
 if __name__ == "__main__":
     main()

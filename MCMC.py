@@ -1,6 +1,7 @@
 from datetime import date
 from datetime import datetime
 from scipy.integrate import solve_ivp
+from scipy.stats import poisson
 from scipy.stats import truncnorm
 from Theta import calcular_theta
 
@@ -112,15 +113,17 @@ def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, efectividad_cuarentena
     gammas_propuestos = np.zeros(ITERACIONES)
     T0s_propuestos = np.zeros(ITERACIONES)
     phis_propuestos = np.zeros(ITERACIONES)
-    propuestas = np.empty(ITERACIONES, dtype=np.ndarray) # TODO parece redundante con los valores propuestos desagregados
+    propuestas = np.empty(ITERACIONES, dtype=np.ndarray)
 
     nus_propuestos = np.empty(ITERACIONES, dtype=np.ndarray)
     estados_SIR_propuestos = np.empty(ITERACIONES, dtype=np.ndarray)
 
     estado_inicial = simular_con_cuarentena(beta, gammar, efectividad_cuarentena, dias_epidemia, T0_INICIAL)
-    mus = medias_muertes_diarias(theta, estado_inicial[3], dias_epidemia)
 
-def medias_muertes_diarias(theta, nus, dias_epidemia):
+    verosimilitud_actual = probabilidades_muertes(Ds, estado_inicial[3], theta) + log_prior(beta, gammar, T0_INICIAL, PHI_INICIAL)
+
+def medias_muertes_diarias(theta, nus):
+    dias_epidemia = nus.size
     # FIXME mi cálculo de theta no incluye las probabilidades para 0, 1 y 2
     # en el paper le asignan la misma probabilidad que a 3
     prob = np.append([0.0000100911228392383,0.0000100911228392383,0.0000100911228392383], list(theta.values())[0:len(theta.values()) -1])
@@ -177,6 +180,16 @@ def log_prior_T0(x):
     if x >= 1 and x <= 60:
         return 0
     return -np.Inf
+
+def log_prior(beta, gamma, T0, phi):
+    return log_prior_gamma_beta(beta/gamma) + log_prior_gamma(1/gamma) + log_prior_T0(T0) + log_prior_phi(phi)
+
+def probabilidades_muertes(Ds, Nus, theta):
+    mus = medias_muertes_diarias(theta, Nus)
+    pois = poisson.logpmf(Ds, Nus)
+    print(mus)
+    print(pois)
+    print(np.sum(pois))
 
 def cargar_muertes_reales_por_dia_del_estado(nombre_estado):
     """

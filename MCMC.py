@@ -104,8 +104,13 @@ def proponer_parametros_adaptacion(beta, gamma, T0, phi):
     return np.random.normal(loc=(beta, gamma, T0, phi), scale=np.sqrt(VARIANZA_INICIAL), size=4)
 
 
-def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, efectividad_cuarentena):
+def proponer_nuevos_parametros(theta, beta, gammar, t0, phi, dias_epidemia, Ds, verosimilitud_actual, sXXt, xbar, estado_inicial, iteracion, propuestas_anteriores):
+    aceptado = np.random.uniform(0, 1) > 0.5
+    return (beta, gammar, t0, phi, estado_inicial, sXXt, xbar, aceptado)
 
+def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, phi):
+
+    t0 = T0_INICIAL
     aceptados = 0
     rechazados = 0
 
@@ -114,13 +119,33 @@ def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, efectividad_cuarentena
     T0s_propuestos = np.zeros(ITERACIONES)
     phis_propuestos = np.zeros(ITERACIONES)
     propuestas = np.empty(ITERACIONES, dtype=np.ndarray)
+    sXXt = []
+    xbar = []
 
-    nus_propuestos = np.empty(ITERACIONES, dtype=np.ndarray)
+    nus_propuestos = np.empty(ITERACIONES, dtype=np.ndarray) # TODO No estoy acumulando los nus
     estados_SIR_propuestos = np.empty(ITERACIONES, dtype=np.ndarray)
 
-    estado_inicial = simular_con_cuarentena(beta, gammar, efectividad_cuarentena, dias_epidemia, T0_INICIAL)
+    estado_inicial = simular_con_cuarentena(beta, gammar, phi, dias_epidemia, t0)
 
-    verosimilitud_actual = probabilidades_muertes(Ds, estado_inicial[3], theta) + log_prior(beta, gammar, T0_INICIAL, PHI_INICIAL)
+    verosimilitud_actual = probabilidades_muertes(Ds, estado_inicial[3], theta) + log_prior(beta, gammar, t0, phi)
+
+    for iteracion in range(ITERACIONES):
+        (beta, gammar, t0, phi, estado_propuesta, sXXt, xbar, aceptado) = proponer_nuevos_parametros(theta, beta, gammar, t0, phi, dias_epidemia, Ds, verosimilitud_actual, sXXt, xbar, estado_inicial, iteracion, propuestas)
+
+        betas_propuestos[iteracion] = beta
+        gammas_propuestos[iteracion] = gammar
+        T0s_propuestos[iteracion] = t0
+        phis_propuestos[iteracion] = phi
+        propuestas[iteracion] = np.array([beta, gammar, t0, phi])
+        estados_SIR_propuestos[iteracion] = estado_propuesta
+
+        if(aceptado):
+            aceptados += 1
+        else:
+            rechazados += 1
+
+    print("fin")
+
 
 def medias_muertes_diarias(theta, nus):
     dias_epidemia = nus.size
@@ -186,10 +211,9 @@ def log_prior(beta, gamma, T0, phi):
 
 def probabilidades_muertes(Ds, Nus, theta):
     mus = medias_muertes_diarias(theta, Nus)
-    pois = poisson.logpmf(Ds, Nus)
-    print(mus)
-    print(pois)
+    pois = poisson.logpmf(Ds, mus)
     print(np.sum(pois))
+    return np.sum(pois)
 
 def cargar_muertes_reales_por_dia_del_estado(nombre_estado):
     """

@@ -105,8 +105,27 @@ def proponer_parametros_adaptacion(beta, gamma, T0, phi):
 
 
 def proponer_nuevos_parametros(theta, beta, gammar, t0, phi, dias_epidemia, Ds, verosimilitud_actual, sXXt, xbar, estado_inicial, iteracion, propuestas_anteriores):
-    aceptado = np.random.uniform(0, 1) > 0.5
-    return (beta, gammar, t0, phi, estado_inicial, sXXt, xbar, aceptado)
+
+    (beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto) = (beta, gammar, t0, phi)
+
+    if (iteracion < PERIODO_ADAPTACION):
+        (beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto) = proponer_parametros_adaptacion(beta, gammar, t0, phi)
+
+    log_prior_actual = log_prior(beta_propuesto, gammar_propuesto, t0, phi_propuesto)
+
+    if(not np.isinf(log_prior_actual)):
+        estado_simulado = simular_con_cuarentena(beta_propuesto, gammar_propuesto, phi_propuesto, dias_epidemia, t0_propuesto)
+
+        verosimilitud_propuesta = probabilidades_muertes(Ds, estado_simulado[3], theta) + log_prior_actual
+
+        aceptado = np.exp(verosimilitud_propuesta - verosimilitud_actual) > np.random.uniform(0, 1)
+        if aceptado:
+            (beta, gammar, t0, phi, verosimilitud_actual, estado_inicial) = (beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto, verosimilitud_propuesta, estado_simulado)
+    else:
+        aceptado = False
+
+
+    return (beta, gammar, t0, phi, estado_inicial, sXXt, xbar, verosimilitud_actual, aceptado)
 
 def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, phi):
 
@@ -122,15 +141,17 @@ def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, phi):
     sXXt = []
     xbar = []
 
-    nus_propuestos = np.empty(ITERACIONES, dtype=np.ndarray) # TODO No estoy acumulando los nus
+    # S, I, R y Nu de cada iteración
     estados_SIR_propuestos = np.empty(ITERACIONES, dtype=np.ndarray)
 
     estado_inicial = simular_con_cuarentena(beta, gammar, phi, dias_epidemia, t0)
 
     verosimilitud_actual = probabilidades_muertes(Ds, estado_inicial[3], theta) + log_prior(beta, gammar, t0, phi)
 
+    inicio = datetime.now()
+    print("Inicio iteraciones metropolis {0}".format(inicio))
     for iteracion in range(ITERACIONES):
-        (beta, gammar, t0, phi, estado_propuesta, sXXt, xbar, aceptado) = proponer_nuevos_parametros(theta, beta, gammar, t0, phi, dias_epidemia, Ds, verosimilitud_actual, sXXt, xbar, estado_inicial, iteracion, propuestas)
+        (beta, gammar, t0, phi, estado_propuesta, sXXt, xbar, verosimilitud_actual, aceptado) = proponer_nuevos_parametros(theta, beta, gammar, t0, phi, dias_epidemia, Ds, verosimilitud_actual, sXXt, xbar, estado_inicial, iteracion, propuestas)
 
         betas_propuestos[iteracion] = beta
         gammas_propuestos[iteracion] = gammar
@@ -144,7 +165,11 @@ def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, phi):
         else:
             rechazados += 1
 
-    print("fin")
+    fin = datetime.now()
+    print("Fin    iteraciones metropolis {0}".format(fin))
+    print("Duración {0}".format(fin - inicio))
+    print("Tasa aceptación {0}".format(aceptados/(aceptados+rechazados)))
+    print("Verosimilitud fina {0}".format(verosimilitud_actual))
 
 
 def medias_muertes_diarias(theta, nus):
@@ -212,7 +237,6 @@ def log_prior(beta, gamma, T0, phi):
 def probabilidades_muertes(Ds, Nus, theta):
     mus = medias_muertes_diarias(theta, Nus)
     pois = poisson.logpmf(Ds, mus)
-    print(np.sum(pois))
     return np.sum(pois)
 
 def cargar_muertes_reales_por_dia_del_estado(nombre_estado):

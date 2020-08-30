@@ -117,7 +117,24 @@ def proponer_parametros_fin_adaptacion(iteracion, propuestas_anteriores, beta, g
 
     prop = np.random.multivariate_normal([beta, gammar, t0, phi], sx, 1)
     (beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto) = (prop[0][0], prop[0][1], prop[0][2], prop[0][3])
-    return (beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto)
+    return (beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto, sXXt, xbar)
+
+def proponer_parametros_luego_adaptacion(iteracion, beta, gammar, t0, phi, sXXt, xbar):
+    """
+    Propone la nueva tupla de parámetros para las iteraciones posteriores al período de adaptación
+    """
+    x = np.reshape([beta, gammar, t0, phi], [4,1])
+    xbar = ((iteracion - 2) * xbar +x) / (iteracion - 1)
+
+    sXXt = sXXt + np.dot(x, x.transpose())
+
+    sx = (1/(iteracion-2))*sXXt - ((iteracion-1)/(iteracion-2))*np.dot(xbar, xbar.transpose())
+    sx = FACTOR_ESCALA * sx
+
+    prop = np.random.multivariate_normal([beta, gammar, t0, phi], sx, 1)
+    (beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto) = (prop[0][0], prop[0][1], prop[0][2], prop[0][3])
+    print((beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto))
+    return (beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto, sXXt, xbar)
 
 def proponer_nuevos_parametros(theta, beta, gammar, t0, phi, dias_epidemia, Ds, verosimilitud_actual, sXXt, xbar, estado_inicial, iteracion, propuestas_anteriores):
 
@@ -129,7 +146,10 @@ def proponer_nuevos_parametros(theta, beta, gammar, t0, phi, dias_epidemia, Ds, 
 
     # En la primera iteración luego del período de adaptación hacemos el setup de las matrices de covarianza
     if iteracion == PERIODO_ADAPTACION:
-        (beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto) = proponer_parametros_fin_adaptacion(iteracion, propuestas_anteriores, beta, gammar, t0, phi)
+        (beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto, sXXt, xbar) = proponer_parametros_fin_adaptacion(iteracion, propuestas_anteriores, beta, gammar, t0, phi)
+
+    if iteracion > PERIODO_ADAPTACION:
+        (beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto, sXXt, xbar) = proponer_parametros_luego_adaptacion(iteracion, beta, gammar, t0, phi, sXXt, xbar)
 
     log_prior_actual = log_prior(beta_propuesto, gammar_propuesto, t0, phi_propuesto)
 

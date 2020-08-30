@@ -204,6 +204,10 @@ def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, phi):
         else:
             rechazados += 1
 
+        if iteracion % (ITERACIONES/10) == 0:
+            check = datetime.now()
+            print("{0} iteraciones, tiempo transcurrido {1}, aceptados {2}, rechazados {3}".format(iteracion, check - inicio, aceptados, rechazados))
+
     fin = datetime.now()
     print("Fin    iteraciones metropolis {0}".format(fin))
     print("Duración {0}".format(fin - inicio))
@@ -214,6 +218,14 @@ def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, phi):
     print("t0 {0}".format(t0))
     print("phi {0}".format(phi))
 
+    path_base_archivos = sys.path[0] + "/salida/mcmc/"
+    np.save(path_base_archivos + "betas", betas_propuestos)
+    np.save(path_base_archivos + "gammas", gammas_propuestos)
+    np.save(path_base_archivos + "phis", phis_propuestos)
+    np.save(path_base_archivos + "T0s", T0s_propuestos)
+    np.save(path_base_archivos + "estados_SIR_propuestos", estados_SIR_propuestos)
+
+    print("Se guardaron los valores de los parámetros en {0}".format(path_base_archivos))
 
 def medias_muertes_diarias(theta, nus):
     dias_epidemia = nus.size

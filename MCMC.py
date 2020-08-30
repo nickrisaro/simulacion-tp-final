@@ -13,10 +13,10 @@ import sys
 
 p = 0.015
 
-ITERACIONES = 50000
+ITERACIONES = 50
 PERIODO_ADAPTACION = ITERACIONES/5
 VARIANZA_INICIAL = [0.002**2, 0.002**2, 0.75**2, 0.002**2]
-FACTOR_ESCALA = (2.38 / 4) * 0.5
+FACTOR_ESCALA = (2.38 / 4)
 LIMITES_T0 = [1, 60] # TODO Ver si arranco en 0
 LIMITES_EFECTIVIDAD_CUARENTENA = [0.01, 0.99]
 
@@ -106,10 +106,23 @@ def proponer_parametros_adaptacion(beta, gamma, T0, phi):
 
 def proponer_nuevos_parametros(theta, beta, gammar, t0, phi, dias_epidemia, Ds, verosimilitud_actual, sXXt, xbar, estado_inicial, iteracion, propuestas_anteriores):
 
+    aceptado = False
     (beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto) = (beta, gammar, t0, phi)
 
     if (iteracion < PERIODO_ADAPTACION):
         (beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto) = proponer_parametros_adaptacion(beta, gammar, t0, phi)
+
+    # En la primera iteración luego del período de adaptación hacemos el setup de las matrices de covarianza
+    if iteracion == PERIODO_ADAPTACION:
+        matriz_propuestas = np.array(propuestas_anteriores[0: iteracion - 1])
+        xbar = matriz_propuestas.mean(0)
+        xbar = np.reshape(xbar, [4,1])
+        sXXt = np.dot(matriz_propuestas.transpose(), matriz_propuestas)
+
+        sx = (1/(iteracion-2))*sXXt - ((iteracion-1)/(iteracion-2))*np.dot(xbar, xbar.transpose())
+        sx = FACTOR_ESCALA * sx
+        # TODO Proponer nuevos parámetros usando sx
+
 
     log_prior_actual = log_prior(beta_propuesto, gammar_propuesto, t0, phi_propuesto)
 
@@ -137,7 +150,8 @@ def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, phi):
     gammas_propuestos = np.zeros(ITERACIONES)
     T0s_propuestos = np.zeros(ITERACIONES)
     phis_propuestos = np.zeros(ITERACIONES)
-    propuestas = np.empty(ITERACIONES, dtype=np.ndarray)
+    propuestas = [None] * ITERACIONES
+
     sXXt = []
     xbar = []
 
@@ -157,7 +171,7 @@ def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, phi):
         gammas_propuestos[iteracion] = gammar
         T0s_propuestos[iteracion] = t0
         phis_propuestos[iteracion] = phi
-        propuestas[iteracion] = np.array([beta, gammar, t0, phi])
+        propuestas[iteracion] = [beta, gammar, t0, phi]
         estados_SIR_propuestos[iteracion] = estado_propuesta
 
         if(aceptado):
@@ -169,7 +183,7 @@ def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, phi):
     print("Fin    iteraciones metropolis {0}".format(fin))
     print("Duración {0}".format(fin - inicio))
     print("Tasa aceptación {0}".format(aceptados/(aceptados+rechazados)))
-    print("Verosimilitud fina {0}".format(verosimilitud_actual))
+    print("Verosimilitud final {0}".format(verosimilitud_actual))
 
 
 def medias_muertes_diarias(theta, nus):

@@ -13,7 +13,7 @@ import sys
 
 p = 0.015
 
-ITERACIONES = 50
+ITERACIONES = 50000
 PERIODO_ADAPTACION = ITERACIONES/5
 VARIANZA_INICIAL = [0.002**2, 0.002**2, 0.75**2, 0.002**2]
 FACTOR_ESCALA = (2.38 / 4)
@@ -133,7 +133,6 @@ def proponer_parametros_luego_adaptacion(iteracion, beta, gammar, t0, phi, sXXt,
 
     prop = np.random.multivariate_normal([beta, gammar, t0, phi], sx, 1)
     (beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto) = (prop[0][0], prop[0][1], prop[0][2], prop[0][3])
-    print((beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto))
     return (beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto, sXXt, xbar)
 
 def proponer_nuevos_parametros(theta, beta, gammar, t0, phi, dias_epidemia, Ds, verosimilitud_actual, sXXt, xbar, estado_inicial, iteracion, propuestas_anteriores):
@@ -210,6 +209,10 @@ def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, phi):
     print("Duración {0}".format(fin - inicio))
     print("Tasa aceptación {0}".format(aceptados/(aceptados+rechazados)))
     print("Verosimilitud final {0}".format(verosimilitud_actual))
+    print("beta {0}".format(beta))
+    print("gammar {0}".format(gammar))
+    print("t0 {0}".format(t0))
+    print("phi {0}".format(phi))
 
 
 def medias_muertes_diarias(theta, nus):

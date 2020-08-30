@@ -103,6 +103,21 @@ def proponer_parametros_adaptacion(beta, gamma, T0, phi):
     """
     return np.random.normal(loc=(beta, gamma, T0, phi), scale=np.sqrt(VARIANZA_INICIAL), size=4)
 
+def proponer_parametros_fin_adaptacion(iteracion, propuestas_anteriores, beta, gammar, t0, phi):
+    """
+    Propone la nueva tupla de parámetros para la primera iteración luego del período de adaptación
+    """
+    matriz_propuestas = np.array(propuestas_anteriores[0: iteracion - 1])
+    xbar = matriz_propuestas.mean(0)
+    xbar = np.reshape(xbar, [4,1])
+    sXXt = np.dot(matriz_propuestas.transpose(), matriz_propuestas)
+
+    sx = (1/(iteracion-2))*sXXt - ((iteracion-1)/(iteracion-2))*np.dot(xbar, xbar.transpose())
+    sx = FACTOR_ESCALA * sx
+
+    prop = np.random.multivariate_normal([beta, gammar, t0, phi], sx, 1)
+    (beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto) = (prop[0][0], prop[0][1], prop[0][2], prop[0][3])
+    return (beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto)
 
 def proponer_nuevos_parametros(theta, beta, gammar, t0, phi, dias_epidemia, Ds, verosimilitud_actual, sXXt, xbar, estado_inicial, iteracion, propuestas_anteriores):
 
@@ -114,15 +129,7 @@ def proponer_nuevos_parametros(theta, beta, gammar, t0, phi, dias_epidemia, Ds, 
 
     # En la primera iteración luego del período de adaptación hacemos el setup de las matrices de covarianza
     if iteracion == PERIODO_ADAPTACION:
-        matriz_propuestas = np.array(propuestas_anteriores[0: iteracion - 1])
-        xbar = matriz_propuestas.mean(0)
-        xbar = np.reshape(xbar, [4,1])
-        sXXt = np.dot(matriz_propuestas.transpose(), matriz_propuestas)
-
-        sx = (1/(iteracion-2))*sXXt - ((iteracion-1)/(iteracion-2))*np.dot(xbar, xbar.transpose())
-        sx = FACTOR_ESCALA * sx
-        # TODO Proponer nuevos parámetros usando sx
-
+        (beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto) = proponer_parametros_fin_adaptacion(iteracion, propuestas_anteriores, beta, gammar, t0, phi)
 
     log_prior_actual = log_prior(beta_propuesto, gammar_propuesto, t0, phi_propuesto)
 
@@ -136,7 +143,6 @@ def proponer_nuevos_parametros(theta, beta, gammar, t0, phi, dias_epidemia, Ds, 
             (beta, gammar, t0, phi, verosimilitud_actual, estado_inicial) = (beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto, verosimilitud_propuesta, estado_simulado)
     else:
         aceptado = False
-
 
     return (beta, gammar, t0, phi, estado_inicial, sXXt, xbar, verosimilitud_actual, aceptado)
 

@@ -82,11 +82,6 @@ def graficarNu(Nu):
 
 def simularSIR(poblacion, beta, gammar, infectados_iniciales, dias, maximo_tiempo_muerte, probabilidades_tiempo_muerte, tasa_infeccion):
 
-# Ver por qué hace esto...
-#   if (length(beta) == 1) {
-#     beta <- rep(beta, T - 1)
-#   }
-
     S = poblacion - infectados_iniciales
     I = infectados_iniciales
     R = 0
@@ -124,6 +119,7 @@ def simularSIR(poblacion, beta, gammar, infectados_iniciales, dias, maximo_tiemp
     graficarNu(Nus)
 
 def main():
+    # TODO Reutilizar la función definida en Theta.py
     incubacion = np.random.poisson(np.random.gamma(size=100000, shape=5.5, scale=1/1.1))
     print(incubacion)
 
@@ -154,8 +150,6 @@ def main():
     tabla_probabilidades_dias_muerte = dict(zip(resultadosUnicos, frecuencias))
 
     simularSIR(1000000, 0.2, 0.1, 10, DIAS, maximo_tiempo_muerte, tabla_probabilidades_dias_muerte, 0.01)
-
-
 
 if __name__ == "__main__":
     main()

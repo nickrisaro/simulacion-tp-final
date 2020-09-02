@@ -6,23 +6,27 @@ import sys
 # Parámetros de la enfermedad
 BETA = 0.3833333
 GAMMA = 0.1666667
+# Efectividad de la cuarentena
+PHI = 0.01
+# Inicio epidemia
+T0 = 10
 
-PHI = 0.4
-T0 = 30 # Inicio epidemia
-T1 = 73 # Inicio cuarentena
+# Parámetros del estado analizado
+# Inicio cuarentena
+T1 = 73
+# Población
 N = 39937489
 
-DIAS = 108
-PORCENTAJE_CONTAGIO_INICIAL = 0.03
-PORCENTAJE_FIN_EPIDEMIA = 0.01
-PORCENTAJE_CAMAS_POBLACION = 0.3
-PORCENTAJE_POBLACION_EN_CUARENTENA = 0.35
+# Cantidad de días a simular
+DIAS = 300
 
-MOSTRAR_GRAFICO = False
 TIEMPO = np.arange(T0, T1, 1)
 TIEMPO_GRAFICO = np.linspace(0, DIAS, DIAS)
 
-def SIR_pre_cuarentena(t, y, beta, gamma):
+# Si está en True muestra el gráfico y frena la ejecución hasta que se cierra
+MOSTRAR_GRAFICO = False
+
+def SIR(t, y, beta, gamma):
     """
     Esta función será invocada por el método de resolución de ecuaciones diferenciales
     Para cada instante de tiempo t calcula los nuevos valores de S, I y R
@@ -35,34 +39,21 @@ def SIR_pre_cuarentena(t, y, beta, gamma):
     drdt = gamma*I
     return dsdt, didt, drdt
 
-def SIR_post_cuarentena(t, y):
-    """
-    Esta función será invocada por el método de resolución de ecuaciones diferenciales
-    Para cada instante de tiempo t calcula los nuevos valores de S, I y R
-    Este modelo asume que comenzó una cuarentena y que la efectividad de esta es PHI
-    """
-    S, I, R = y
-
-    dsdt = -BETA*PHI*S*I
-    didt = BETA*PHI*S*I - GAMMA*I
-    drdt = GAMMA*I
-    return dsdt, didt, drdt
-
 def simular_con_cuarentena():
     """
     Realiza una simulación con cuarentena del modelo SIR
     Toda la población es susceptible de contagiarse
     Retorna todos los valores de S, I y R para cada instante de tiempo
     """
-    S0 = 1
     I0 = 1/N
-    R0 = 1.953490*10**-17
+    R0 = 0
+    S0 = 1 - I0 - R0
 
     y0 = [S0, I0, R0]
 
     TIEMPO = np.arange(T0, T1, 1)
 
-    ret = solve_ivp(SIR_pre_cuarentena, [T0, T1], y0, t_eval=TIEMPO, method='LSODA', args=(BETA*PHI, GAMMA))
+    ret = solve_ivp(SIR, [T0, T1], y0, t_eval=TIEMPO, method='LSODA', args=(BETA*PHI, GAMMA))
     S, I, R = ret.y
 
     S = np.insert(S, 0, np.repeat(S0, T0+1), axis=0)
@@ -79,7 +70,7 @@ def simular_con_cuarentena():
 
     TIEMPO = np.arange(T1, DIAS+1, 1)
 
-    ret = solve_ivp(SIR_pre_cuarentena, [T1, DIAS+1], y0, t_eval=TIEMPO, method='LSODA', args=(BETA, GAMMA))
+    ret = solve_ivp(SIR, [T1, DIAS+1], y0, t_eval=TIEMPO, method='LSODA', args=(BETA, GAMMA))
     S1, I1, R1 = ret.y
 
     Nus1 = S1 * N
@@ -89,8 +80,7 @@ def simular_con_cuarentena():
     S = np.append(S, S1[1:S1.size - 1])
     I = np.append(I, I1[1:I1.size - 1])
     R = np.append(R, R1[1:R1.size - 1])
-    print(S*N)
-    print(Nus)
+
     return [S, I, R, Nus]
 
 
@@ -116,8 +106,8 @@ def graficar(SIR, modelo):
     for spine in ('top', 'right', 'bottom', 'left'):
         ax.spines[spine].set_visible(False)
     plt.title(modelo)
-    plt.savefig("{0}/SIR-{1} - phi {2} - T1 {3}.png".format(sys.path[0], modelo, PHI, T1))
-    print("El gráfico se guardó en {0}/SIR-{1} - phi {2} - T1 {3}.png".format(sys.path[0], modelo, PHI, T1))
+    plt.savefig("{0}/salida/SIR-{1} - phi {2} - T0 {3} - beta {4} - gamma {5}.png".format(sys.path[0], modelo, PHI, T0, BETA, GAMMA))
+    print("El gráfico se guardó en {0}/salida/SIR-{1} - phi {2} - T0 {3} - beta {4} - gamma {5}.png".format(sys.path[0], modelo, PHI, T0, BETA, GAMMA))
     if MOSTRAR_GRAFICO:
         plt.show()
 

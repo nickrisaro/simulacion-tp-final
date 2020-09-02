@@ -1,3 +1,5 @@
+import json
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import solve_ivp
@@ -20,7 +22,6 @@ N = 39937489
 # Cantidad de días a simular
 DIAS = 300
 
-TIEMPO = np.arange(T0, T1, 1)
 TIEMPO_GRAFICO = np.linspace(0, DIAS, DIAS)
 
 # Si está en True muestra el gráfico y frena la ejecución hasta que se cierra
@@ -39,28 +40,28 @@ def SIR(t, y, beta, gamma):
     drdt = gamma*I
     return dsdt, didt, drdt
 
-def simular_con_cuarentena():
+def simular_con_cuarentena(beta, gamma, t0, phi, t1, n):
     """
     Realiza una simulación con cuarentena del modelo SIR
     Toda la población es susceptible de contagiarse
     Retorna todos los valores de S, I y R para cada instante de tiempo
     """
-    I0 = 1/N
+    I0 = 1/n
     R0 = 0
     S0 = 1 - I0 - R0
 
     y0 = [S0, I0, R0]
 
-    TIEMPO = np.arange(T0, T1, 1)
+    TIEMPO = np.arange(t0, t1, 1)
 
-    ret = solve_ivp(SIR, [T0, T1], y0, t_eval=TIEMPO, method='LSODA', args=(BETA*PHI, GAMMA))
+    ret = solve_ivp(SIR, [t0, t1], y0, t_eval=TIEMPO, method='LSODA', args=(beta, gamma))
     S, I, R = ret.y
 
-    S = np.insert(S, 0, np.repeat(S0, T0+1), axis=0)
-    I = np.insert(I, 0, np.repeat(I0, T0+1), axis=0)
-    R = np.insert(R, 0, np.repeat(R0, T0+1), axis=0)
+    S = np.insert(S, 0, np.repeat(S0, t0+1), axis=0)
+    I = np.insert(I, 0, np.repeat(I0, t0+1), axis=0)
+    R = np.insert(R, 0, np.repeat(R0, t0+1), axis=0)
 
-    Nus = S * N
+    Nus = S * n
     Nus = np.subtract(Nus[0:Nus.size -1], Nus[1:Nus.size])
 
     S0 = S[S.size - 1]
@@ -68,12 +69,12 @@ def simular_con_cuarentena():
     R0 = R[R.size - 1]
     y0 = [S0, I0, R0]
 
-    TIEMPO = np.arange(T1, DIAS+1, 1)
+    TIEMPO = np.arange(t1, DIAS+1, 1)
 
-    ret = solve_ivp(SIR, [T1, DIAS+1], y0, t_eval=TIEMPO, method='LSODA', args=(BETA, GAMMA))
+    ret = solve_ivp(SIR, [t1, DIAS+1], y0, t_eval=TIEMPO, method='LSODA', args=(beta*phi, gamma))
     S1, I1, R1 = ret.y
 
-    Nus1 = S1 * N
+    Nus1 = S1 * n
     Nus1 = np.subtract(Nus1[0:Nus1.size -1], Nus1[1:Nus1.size])
     Nus = np.insert(Nus1, 0, Nus, axis=0)
 
@@ -115,7 +116,26 @@ def main():
 
     print("TP final - grafico SIR con cuarentena")
 
-    graficar(simular_con_cuarentena(), "Con cuarentena")
+    if os.path.isfile(sys.path[0] + "/salida/mcmc/parametros.json"):
+        parametros = {}
+        with open(sys.path[0] + "/salida/mcmc/parametros.json", "r") as file:
+            parametros = json.loads(file.read())
+
+        beta = parametros["beta"]
+        gamma = parametros["gamma"]
+        t0 = int(parametros["T0"])
+        phi = parametros["phi"]
+        t1 = parametros["inicio_cuarentena"]
+        n = parametros["poblacion"]
+    else:
+        beta = BETA
+        gamma = GAMMA
+        t0 = T0
+        phi = PHI
+        t1 = T1
+        n = N
+
+    graficar(simular_con_cuarentena(beta, gamma, t0, phi, t1, n), "Con cuarentena")
 
 
 if __name__ == "__main__":

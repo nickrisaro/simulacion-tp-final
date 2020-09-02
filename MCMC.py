@@ -6,6 +6,7 @@ from scipy.stats import truncnorm
 from Theta import calcular_theta
 
 import csv
+import json
 import matplotlib.pyplot as plt
 import numpy as np
 import statsmodels.api as sm
@@ -224,6 +225,17 @@ def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, phi):
     np.save(path_base_archivos + "phis", phis_propuestos)
     np.save(path_base_archivos + "T0s", T0s_propuestos)
     np.save(path_base_archivos + "estados_SIR_propuestos", estados_SIR_propuestos)
+
+    resultado = {}
+    resultado["beta"] = beta
+    resultado["gamma"] = gammar
+    resultado["T0"] = t0
+    resultado["phi"] = phi
+    resultado["poblacion"] = POBLACION
+    resultado["inicio_cuarentena"] = T1
+
+    with open(path_base_archivos + "parametros.json", "w") as file:
+        file.write(json.dumps(resultado))
 
     print("Se guardaron los valores de los parámetros en {0}".format(path_base_archivos))
 

@@ -82,8 +82,36 @@ def simular_con_cuarentena(beta, gamma, t0, phi, t1, n):
     I = np.append(I, I1[1:I1.size - 1])
     R = np.append(R, R1[1:R1.size - 1])
 
+    print(S*n)
     return [S, I, R, Nus]
 
+def simular_sin_cuarentena(beta, gamma, t0, phi, t1, n):
+    """
+    Realiza una simulación con cuarentena del modelo SIR
+    Toda la población es susceptible de contagiarse
+    Retorna todos los valores de S, I y R para cada instante de tiempo
+    """
+    I0 = 1/n
+    R0 = 0
+    S0 = 1 - I0 - R0
+
+    y0 = [S0, I0, R0]
+
+    TIEMPO = np.arange(t0, DIAS, 1)
+
+    ret = solve_ivp(SIR, [t0, DIAS], y0, t_eval=TIEMPO, method='LSODA', args=(beta, gamma))
+    S, I, R = ret.y
+
+    S = np.insert(S, 0, np.repeat(S0, t0+1), axis=0)
+    I = np.insert(I, 0, np.repeat(I0, t0+1), axis=0)
+    R = np.insert(R, 0, np.repeat(R0, t0+1), axis=0)
+
+    Nus = S * n
+    print(Nus)
+    Nus = np.subtract(Nus[0:Nus.size -1], Nus[1:Nus.size])
+
+    print(Nus)
+    return [S, I, R, Nus]
 
 def graficar(SIR, modelo):
     """
@@ -135,7 +163,7 @@ def main():
         t1 = T1
         n = N
 
-    graficar(simular_con_cuarentena(beta, gamma, t0, phi, t1, n), "Con cuarentena")
+    graficar(simular_sin_cuarentena(beta, gamma, t0, phi, t1, n), "Sin cuarentena")
 
 
 if __name__ == "__main__":

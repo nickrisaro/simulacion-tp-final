@@ -15,7 +15,7 @@ import sys
 p = 0.015
 
 ITERACIONES = 50000
-PERIODO_ADAPTACION = ITERACIONES/5
+PERIODO_ADAPTACION = 10000
 VARIANZA_INICIAL = [0.002**2, 0.002**2, 0.75**2, 0.002**2]
 FACTOR_ESCALA = (2.38 / 4)
 LIMITES_T0 = [1, 60] # TODO Ver si arranco en 0
@@ -51,9 +51,9 @@ def simular_con_cuarentena(BETA, GAMMA, PHI, DIAS, T0):
 
     # Primero simulamos desde el instante en el que se detecta el primer caso (T0)
     # hasta el momento en el que se implementa la cuarentena (T1)
-    S0 = 1
     I0 = 1/POBLACION
-    R0 = 1.953490*10**-17 # TODO usar cero? Comparar con paper
+    R0 = 0
+    S0 = 1 - I0 - R0
     y0 = [S0, I0, R0]
 
     TIEMPO = np.arange(T0, T1, 1)
@@ -214,6 +214,7 @@ def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, phi):
     print("Duración {0}".format(fin - inicio))
     print("Tasa aceptación {0}".format(aceptados/(aceptados+rechazados)))
     print("Verosimilitud final {0}".format(verosimilitud_actual))
+    # TODO Reportar promedios y desvío
     print("beta {0}".format(beta))
     print("gammar {0}".format(gammar))
     print("t0 {0}".format(t0))
@@ -227,10 +228,10 @@ def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, phi):
     np.save(path_base_archivos + "estados_SIR_propuestos", estados_SIR_propuestos)
 
     resultado = {}
-    resultado["beta"] = beta
-    resultado["gamma"] = gammar
-    resultado["T0"] = t0
-    resultado["phi"] = phi
+    resultado["beta"] = limpiar_parametro(betas_propuestos)
+    resultado["gamma"] = limpiar_parametro(gammas_propuestos)
+    resultado["T0"] = limpiar_parametro(T0s_propuestos)
+    resultado["phi"] = limpiar_parametro(phis_propuestos)
     resultado["poblacion"] = POBLACION
     resultado["inicio_cuarentena"] = T1
 
@@ -238,6 +239,11 @@ def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, phi):
         file.write(json.dumps(resultado))
 
     print("Se guardaron los valores de los parámetros en {0}".format(path_base_archivos))
+
+def limpiar_parametro(parametro):
+    parametro_sin_adaptacion = parametro[PERIODO_ADAPTACION:ITERACIONES]
+    parametro_medio = np.mean(parametro_sin_adaptacion)
+    return parametro_medio
 
 def medias_muertes_diarias(theta, nus):
     dias_epidemia = nus.size

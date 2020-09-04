@@ -1,8 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import sys
 
-MOSTRAR_GRAFICO = True
+MOSTRAR_GRAFICO = False
 DIAS = 300
 TIEMPO = np.linspace(0, DIAS, DIAS)
 
@@ -148,6 +149,9 @@ def main():
     frecuencias = frecuencias/len(theta)
 
     tabla_probabilidades_dias_muerte = dict(zip(resultadosUnicos, frecuencias))
+
+    if not os.path.exists("{0}/salida".format(sys.path[0])):
+        os.makedirs("{0}/salida".format(sys.path[0]))
 
     simularSIR(1000000, 0.2, 0.1, 10, DIAS, maximo_tiempo_muerte, tabla_probabilidades_dias_muerte, 0.01)
 

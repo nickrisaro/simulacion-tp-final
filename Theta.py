@@ -1,6 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import sys
+
+# Si está en True muestra el gráfico y frena la ejecución hasta que se cierra
+MOSTRAR_GRAFICO = False
 
 def calcular_theta():
     """
@@ -42,9 +46,14 @@ def main():
 
     plt.bar(theta.keys(), theta.values())
     plt.title("Probabilidad de morir a los n días de ser infectado")
+
+    if not os.path.exists("{0}/salida".format(sys.path[0])):
+        os.makedirs("{0}/salida".format(sys.path[0]))
+
     plt.savefig("{0}/salida/theta.png".format(sys.path[0]))
     print("El gráfico se guardó en {0}/salida/theta.png".format(sys.path[0]))
-    plt.show()
+    if MOSTRAR_GRAFICO:
+        plt.show()
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ import csv
 import json
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import statsmodels.api as sm
 import sys
 
@@ -214,13 +215,11 @@ def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, phi):
     print("Duración {0}".format(fin - inicio))
     print("Tasa aceptación {0}".format(aceptados/(aceptados+rechazados)))
     print("Verosimilitud final {0}".format(verosimilitud_actual))
-    # TODO Reportar promedios y desvío
-    print("beta {0}".format(beta))
-    print("gammar {0}".format(gammar))
-    print("t0 {0}".format(t0))
-    print("phi {0}".format(phi))
 
     path_base_archivos = sys.path[0] + "/salida/mcmc/"
+    if not os.path.exists(path_base_archivos):
+        os.makedirs(path_base_archivos)
+
     np.save(path_base_archivos + "betas", betas_propuestos)
     np.save(path_base_archivos + "gammas", gammas_propuestos)
     np.save(path_base_archivos + "phis", phis_propuestos)
@@ -234,6 +233,11 @@ def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, phi):
     resultado["phi"] = limpiar_parametro(phis_propuestos)
     resultado["poblacion"] = POBLACION
     resultado["inicio_cuarentena"] = T1
+
+    print("beta {0}".format(resultado["beta"]))
+    print("gammar {0}".format(resultado["gamma"]))
+    print("t0 {0}".format(resultado["T0"]))
+    print("phi {0}".format(resultado["phi"]))
 
     with open(path_base_archivos + "parametros.json", "w") as file:
         file.write(json.dumps(resultado))

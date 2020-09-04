@@ -132,8 +132,12 @@ def graficar(SIR, modelo):
     for spine in ('top', 'right', 'bottom', 'left'):
         ax.spines[spine].set_visible(False)
     plt.title(modelo)
-    plt.savefig("{0}/salida/SIR-{1} - phi {2} - T0 {3} - beta {4} - gamma {5}.png".format(sys.path[0], modelo, PHI, T0, BETA, GAMMA))
-    print("El gráfico se guardó en {0}/salida/SIR-{1} - phi {2} - T0 {3} - beta {4} - gamma {5}.png".format(sys.path[0], modelo, PHI, T0, BETA, GAMMA))
+
+    if not os.path.exists("{0}/salida".format(sys.path[0])):
+        os.makedirs("{0}/salida".format(sys.path[0]))
+
+    plt.savefig("{0}/salida/SIR-{1}.png".format(sys.path[0], modelo))
+    print("El gráfico se guardó en {0}/salida/SIR-{1}.png".format(sys.path[0], modelo))
     if MOSTRAR_GRAFICO:
         plt.show()
 

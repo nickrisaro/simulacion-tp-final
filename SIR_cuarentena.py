@@ -20,7 +20,7 @@ T1 = 73
 N = 39937489
 
 # Cantidad de días a simular
-DIAS = 300
+DIAS = 400
 
 TIEMPO_GRAFICO = np.linspace(0, DIAS, DIAS)
 
@@ -82,7 +82,6 @@ def simular_con_cuarentena(beta, gamma, t0, phi, t1, n):
     I = np.append(I, I1[1:I1.size - 1])
     R = np.append(R, R1[1:R1.size - 1])
 
-    print(S*n)
     return [S, I, R, Nus]
 
 def simular_sin_cuarentena(beta, gamma, t0, phi, t1, n):
@@ -107,10 +106,8 @@ def simular_sin_cuarentena(beta, gamma, t0, phi, t1, n):
     R = np.insert(R, 0, np.repeat(R0, t0+1), axis=0)
 
     Nus = S * n
-    print(Nus)
     Nus = np.subtract(Nus[0:Nus.size -1], Nus[1:Nus.size])
 
-    print(Nus)
     return [S, I, R, Nus]
 
 def graficar(SIR, modelo):
@@ -163,7 +160,7 @@ def main():
         t1 = T1
         n = N
 
-    graficar(simular_sin_cuarentena(beta, gamma, t0, phi, t1, n), "Sin cuarentena")
+    graficar(simular_con_cuarentena(beta, gamma, t0, phi, t1, n), "Con cuarentena")
 
 
 if __name__ == "__main__":

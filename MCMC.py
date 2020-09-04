@@ -13,6 +13,8 @@ import os
 import statsmodels.api as sm
 import sys
 
+import Verosimilitud as ll
+
 p = 0.015
 
 ITERACIONES = 50000
@@ -152,7 +154,7 @@ def proponer_nuevos_parametros(theta, beta, gammar, t0, phi, dias_epidemia, Ds, 
     if iteracion > PERIODO_ADAPTACION:
         (beta_propuesto, gammar_propuesto, t0_propuesto, phi_propuesto, sXXt, xbar) = proponer_parametros_luego_adaptacion(iteracion, beta, gammar, t0, phi, sXXt, xbar)
 
-    log_prior_actual = log_prior(beta_propuesto, gammar_propuesto, t0, phi_propuesto)
+    log_prior_actual = ll.log_prior(beta_propuesto, gammar_propuesto, t0, phi_propuesto)
 
     if(not np.isinf(log_prior_actual)):
         estado_simulado = simular_con_cuarentena(beta_propuesto, gammar_propuesto, phi_propuesto, dias_epidemia, t0_propuesto)
@@ -187,7 +189,7 @@ def ejecutar_mcmc(theta, beta, gammar, dias_epidemia, Ds, phi):
 
     estado_inicial = simular_con_cuarentena(beta, gammar, phi, dias_epidemia, t0)
 
-    verosimilitud_actual = probabilidades_muertes(Ds, estado_inicial[3], theta) + log_prior(beta, gammar, t0, phi)
+    verosimilitud_actual = probabilidades_muertes(Ds, estado_inicial[3], theta) + ll.log_prior(beta, gammar, t0, phi)
 
     inicio = datetime.now()
     print("Inicio iteraciones metropolis {0}".format(inicio))
@@ -258,58 +260,6 @@ def medias_muertes_diarias(theta, nus):
     nus = nus * p
     y = sm.tsa.filters.convolution_filter(nus, prob, nsides=1)
     return y[-dias_epidemia:]
-
-
-def log_normal_truncada_desplazada(x, limite_inferior, limite_superior, media, desvio):
-    """
-    Devuelve el log de la densidad de una normal truncada entre los límites indicados
-    con la media y desvío recibidos
-    """
-    a, b = (limite_inferior - media) / desvio, (limite_superior - media) / desvio
-    return truncnorm.logpdf(x, a, b, loc = media, scale = desvio) # TODO La versión del paper devuelve -Inf si x == limite_inferior o x == limite_superior
-
-def log_prior_gamma_beta(x):
-    """
-    Calcula el log de la pdf para el parámetro gamma | beta
-    Gamma | beta se comporta como una normal en el rango [1, 4] con media 2.5 y desvío estándar 1.5
-    Los valores se toman a partir del estudio de Li, Q et al
-    """
-    limite_inferior, limite_superior = 1, 4
-    media, desvio = 2.5, 1.5
-
-    return log_normal_truncada_desplazada(x, limite_inferior, limite_superior, media, desvio)
-
-def log_prior_gamma(x):
-    """
-    Calcula el log de la pdf para el parámetro gamma
-    Gamma se comporta como una normal en el rango [3.4, 9.4] con media 6.4 y desvío estándar 1.5
-    La media se obtuvo del paper de Ferguson et al. Esto nos da un período infeccioso que varía de aproximadamente 3 a 9 días
-    """
-    limite_inferior, limite_superior = 3.4, 9.4
-    media, desvio = 6.4, 1.5
-
-    return log_normal_truncada_desplazada(x, limite_inferior, limite_superior, media, desvio)
-
-def log_prior_phi(x):
-    """
-    Calcula el log de la pdf para el parámetro phi
-    Phi es uniforme en el rango [0.01, 0.99]
-    """
-    if x >= 0.01 and x <= 0.99:
-        return 0
-    return -np.Inf
-
-def log_prior_T0(x):
-    """
-    Calcula el log de la pdf para el parámetro T0
-    T0 es uniforme en el rango [1, 60] (1 = 1/1/2020, 60 = 29/2/2020)
-    """
-    if x >= 1 and x <= 60:
-        return 0
-    return -np.Inf
-
-def log_prior(beta, gamma, T0, phi):
-    return log_prior_gamma_beta(beta/gamma) + log_prior_gamma(1/gamma) + log_prior_T0(T0) + log_prior_phi(phi)
 
 def probabilidades_muertes(Ds, Nus, theta):
     mus = medias_muertes_diarias(theta, Nus)
